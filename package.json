@@ -1,0 +1,16 @@
+{
+    "name": "webgl-heatmap",
+    "version": "0.0.1",
+    "description": "visualize over 200k elements on the canvas",
+    "scripts": {
+	"start": "http-server -a localhost -p 8000",
+	"test" : "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Pietro Grandi",
+    "license": "MIT",
+    "dependencies": {
+	"http-server": "^0.8.5",
+	"pixi.js": "3.0.7",
+	"openlayers": "3.10.1"
+    }
+}
