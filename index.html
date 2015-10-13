@@ -5,6 +5,10 @@
 <head>
   <meta charset="utf-8"/>
   <title>WebGL heatmap</title>
+
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  
   <script type="text/javascript" src="node_modules/openlayers/dist/ol-debug.js" ></script>
   <script type="text/javascript" src="node_modules/pixi.js/bin/pixi.js" ></script>
   <script type="text/javascript" src="src/MV.js" ></script>
@@ -47,6 +51,7 @@
     <option value="DOWNLINK" selected >DOWNLINK</option>
     <option value="PMKPI">PM-KPI</option>
   </select>
+  <h3 id="vertices"></h3>
 </header>
     <section id="theMap">
       <canvas id="theCanvas" width="800" height="600" ></canvas>
