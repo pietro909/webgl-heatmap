@@ -73,7 +73,7 @@ function loadData( url, onProgress, onLoaded )
                   break;
                   case 'PM-KPI':
                   parsed = parseInt( value, 10 );
-                  currentDoc[ key ] = parsed;
+                  currentDoc[ 'PM_KPI' ] = parsed;
                   if ( bounds.PMKPI.min > parsed )
                   {
                       bounds.PMKPI.min = parsed; 
@@ -150,7 +150,7 @@ var onLoad = function()
     }
 
    
-    function parseData( data, marker )
+    function parseData( data )
     {
         var k,currentPoint,p,  pointArray=[];
 
@@ -167,33 +167,25 @@ var onLoad = function()
                 // two bytes position
                 pointArray.push( p.x );
                 pointArray.push( p.y );
-                // four bytes color
-                if ( marker === 'UPLINK' )
-                {
-                    pointArray.push( 0.1 );
-                    pointArray.push( currentPoint[marker] / bounds[marker].max );
-                }
-                else if ( marker === 'DOWNLINK' )
-                {
-                    pointArray.push( currentPoint[marker] / bounds[marker].max );
-                    pointArray.push( currentPoint[marker] / bounds[marker].max );
-                }
-                else
-                {
-                    pointArray.push( currentPoint[marker] / bounds[marker].max );
-                    pointArray.push( 0.1 );
-                }
+                // four bytes baser color
+                pointArray.push( 1.0 );
+                pointArray.push( 0.0 );
                 pointArray.push( 0.0 );
                 pointArray.push( 1.0 );
+                // point attributes: 
+                pointArray.push( currentPoint.UPLINK );
+                pointArray.push( currentPoint.DOWNLINK );
+                pointArray.push( currentPoint.PM_KPI );
             }
             
         }
         return( new Float32Array( pointArray ) );
     }
     
-    function drawData( vertices )
+    function drawData( vertices, marker )
     {
-        var stride = 6 * Float32Array.BYTES_PER_ELEMENT;
+        var pointSize = 9;
+        var stride = pointSize * Float32Array.BYTES_PER_ELEMENT;
         var step = Float32Array.BYTES_PER_ELEMENT;
         
         // configure webgl
@@ -216,15 +208,39 @@ var onLoad = function()
         gl.enableVertexAttribArray(vPosition);
         
         var vColor = gl.getAttribLocation(program, 'vColor');
-        gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, stride, 2*step);
+        gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, stride, 2 * step);
         gl.enableVertexAttribArray(vColor);
-        
+
+        var vUplink = gl.getAttribLocation(program, 'vUplink');
+        gl.vertexAttribPointer(vUplink, 1, gl.FLOAT, false, stride, 6 * step);
+        gl.enableVertexAttribArray(vUplink);
+
+        var u_UpLinkMax = gl.getUniformLocation( program, 'u_UpLinkMax' );
+        gl.uniform1fv( u_UpLinkMax, [ bounds.UPLINK.max ] );
+
+        var vDownlink = gl.getAttribLocation(program, 'vDownlink');
+        gl.vertexAttribPointer(vDownlink, 1, gl.FLOAT, false, stride, 7 * step);
+        gl.enableVertexAttribArray(vDownlink);
+
+        var u_DownLinkMax = gl.getUniformLocation( program, 'u_DownLinkMax' );
+        gl.uniform1fv( u_DownLinkMax, [ bounds.DOWNLINK.max ] );
+
+        var vPmkpi = gl.getAttribLocation(program, 'vPmkpi');
+        gl.vertexAttribPointer(vPmkpi, 1, gl.FLOAT, false, stride, 8 * step);
+        gl.enableVertexAttribArray(vPmkpi);
+
+        var u_PmKpiMax = gl.getUniformLocation( program, 'u_PmKpiMax' );
+        gl.uniform1fv( u_PmKpiMax, [ bounds.PMKPI.max ] );
+
+        var u_marker = gl.getUniformLocation( program, 'u_marker' );
+        gl.uniform1i( u_marker, [ marker ] );
+      
         gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.drawArrays( gl.POINTS, 0, vertices.length / 6 );
+        gl.drawArrays( gl.POINTS, 0, vertices.length / pointSize );
 
         tEnd = new Date();
         var elaborationTime = (tEnd-tRun) / 1000;
-        var message = 'Displaying ' + (vertices.length / 6) + ' points. Parsed in ' + elaborationTime + ' seconds.';
+        var message = 'Displaying ' + (vertices.length / pointSize) + ' points. Parsed in ' + elaborationTime + ' seconds.';
         console.log( message );
         document.getElementById( 'vertices' ).textContent = message;
         
@@ -239,15 +255,15 @@ var onLoad = function()
         },
         function( data )
         {
-            var vertices = parseData( data, 'UPLINK' );
+            var vertices = parseData( data );
             
-            drawData( vertices );
+            drawData( vertices, 1 );
             
             changeMarker.onchange = function( event )
             {
-                var vertices = parseData( data, event.target.value );
+                var vertices = parseData( data );
                 //console.log( bounds[event.target.value].min + ' - ' + bounds[event.target.value].max );
-                drawData( vertices );
+                drawData( vertices, parseInt( event.target.value, 10 ) );
                 
             };
         }
