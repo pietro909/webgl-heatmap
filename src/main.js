@@ -114,8 +114,8 @@ function loadData( url, onProgress, onLoaded )
 
 function normalizeCoords( x, y )
 {
-    var newX =  (x / 8) - 1.5;
-    var newY =  (y / 6) - 7;
+    var newX = x; // (x / 8) - 1.5;
+    var newY = y; // (y / 6) - 7;
 
     return {
         x : newX,
@@ -126,15 +126,18 @@ function normalizeCoords( x, y )
 
 var tRun, tEnd, tStart = new Date();
 
+var map;
+
 var onLoad = function()
 {
   'use strict';
 
     var
-    map, canvas, renderer, stage, container, gl, points = [],
-//    OpenLayers = ol,
+        canvas, renderer, stage, container, gl, points = [], allVertices = [],
+    OpenLayers = ol,
 //      url = '/assets/data/fake-data-1-rop-trunc.csv';
       url = '/assets/data/fake-data-1-rop.csv';
+  var pointSize = 9;
 
     var changeMarker = document.getElementById('changeMarker');
 
@@ -149,6 +152,28 @@ var onLoad = function()
         return;
     }
 
+    // load shaders 
+    var program = initShaders(gl, 'vertex-shader', 'fragment-shader');
+
+    gl.useProgram(program);
+
+    /** WebGL declarations **/
+        
+    // associate out shader variables with our data buffer
+    var bufferId = gl.createBuffer();
+    var vPosition = gl.getAttribLocation(program, 'vPosition');
+    var vColor = gl.getAttribLocation(program, 'vColor');
+    var vUplink = gl.getAttribLocation(program, 'vUplink');
+    var u_UpLinkMax = gl.getUniformLocation( program, 'u_UpLinkMax' );
+    var vDownlink = gl.getAttribLocation(program, 'vDownlink');
+    var u_DownLinkMax = gl.getUniformLocation( program, 'u_DownLinkMax' );
+    var vPmkpi = gl.getAttribLocation(program, 'vPmkpi');
+    var u_PmKpiMax = gl.getUniformLocation( program, 'u_PmKpiMax' );
+    var u_marker = gl.getUniformLocation( program, 'u_marker' );
+    var u_centerPoint = gl.getUniformLocation( program, 'u_centerPoint' );
+    var u_zoom = gl.getUniformLocation( program, 'u_zoom' );
+    var u_coordsScale = gl.getUniformLocation( program, 'u_coordsScale' );
+    gl.uniform1f( u_coordsScale, 5 );
    
     function parseData( data )
     {
@@ -184,55 +209,42 @@ var onLoad = function()
     
     function drawData( vertices, marker )
     {
-        var pointSize = 9;
+       
         var stride = pointSize * Float32Array.BYTES_PER_ELEMENT;
         var step = Float32Array.BYTES_PER_ELEMENT;
-        
+
+      allVertices = vertices;
+
         // configure webgl
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.clearColor(0.94, 0.98, 0.98, 1.0);
         
-        // load shaders
-        var program = initShaders(gl, 'vertex-shader', 'fragment-shader');
-
-        gl.useProgram(program);
-        
         // load data into the GPU
-        var bufferId = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
         // associate out shader variables with our data buffer
-        var vPosition = gl.getAttribLocation(program, 'vPosition');
         gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, stride, 0);
         gl.enableVertexAttribArray(vPosition);
-        
-        var vColor = gl.getAttribLocation(program, 'vColor');
+
         gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, stride, 2 * step);
         gl.enableVertexAttribArray(vColor);
 
-        var vUplink = gl.getAttribLocation(program, 'vUplink');
         gl.vertexAttribPointer(vUplink, 1, gl.FLOAT, false, stride, 6 * step);
         gl.enableVertexAttribArray(vUplink);
 
-        var u_UpLinkMax = gl.getUniformLocation( program, 'u_UpLinkMax' );
         gl.uniform1fv( u_UpLinkMax, [ bounds.UPLINK.max ] );
 
-        var vDownlink = gl.getAttribLocation(program, 'vDownlink');
         gl.vertexAttribPointer(vDownlink, 1, gl.FLOAT, false, stride, 7 * step);
         gl.enableVertexAttribArray(vDownlink);
 
-        var u_DownLinkMax = gl.getUniformLocation( program, 'u_DownLinkMax' );
         gl.uniform1fv( u_DownLinkMax, [ bounds.DOWNLINK.max ] );
 
-        var vPmkpi = gl.getAttribLocation(program, 'vPmkpi');
         gl.vertexAttribPointer(vPmkpi, 1, gl.FLOAT, false, stride, 8 * step);
         gl.enableVertexAttribArray(vPmkpi);
 
-        var u_PmKpiMax = gl.getUniformLocation( program, 'u_PmKpiMax' );
         gl.uniform1fv( u_PmKpiMax, [ bounds.PMKPI.max ] );
 
-        var u_marker = gl.getUniformLocation( program, 'u_marker' );
         gl.uniform1i( u_marker, [ marker ] );
       
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -270,24 +282,46 @@ var onLoad = function()
     );
     
 
-  /*
-  map = new ol.Map({
+  
+  map = new OpenLayers.Map({
     layers: [
-      new ol.layer.Tile({
-        source: new ol.source.OSM()
+      new OpenLayers.layer.Tile({
+        source: new OpenLayers.source.OSM()
       })
     ],
     target: 'theMap',
-    controls: ol.control.defaults({
+    controls: OpenLayers.control.defaults({
       attributionOptions: ({
         collapsible: false
       })
     }),
-    view: new ol.View({
+    view: new OpenLayers.View({
       center: [0, 0],
-      zoom: 2
+      zoom: 1
     })
   });
-  */
+
+  var view = map.getView();
+/*
+  var position = OpenLayers.Coordinate([40.93919444444444, 14.72503888888889]);
+  map.setCenter( position );
+*/
+  map.addEventListener(
+    'moveend',
+    function( event )
+    {
+      var
+          center = view.getCenter(),
+          zoom = view.getZoom();
+      console.log(' center to '+center[0]+', '+center[1]+' at '+zoom );
+
+      gl.uniform2fv( u_centerPoint, center );
+      gl.uniform1f( u_zoom, /*5.0*/ zoom );
+
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays( gl.POINTS, 0, allVertices.length / pointSize );
+
+    }
+  );
     
 }
