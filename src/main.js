@@ -124,6 +124,8 @@ function normalizeCoords( x, y )
     
 }
 
+var tRun, tEnd, tStart = new Date();
+
 var onLoad = function()
 {
   'use strict';
@@ -147,9 +149,12 @@ var onLoad = function()
         return;
     }
 
+   
     function parseData( data, marker )
     {
         var k,currentPoint,p,  pointArray=[];
+
+        tRun = new Date();
 
         for ( var i = 0; i < data.length; i += 1 )
         {
@@ -217,7 +222,9 @@ var onLoad = function()
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays( gl.POINTS, 0, vertices.length / 6 );
 
-        var message = 'Displaying ' + (vertices.length / 6) + ' points.';
+        tEnd = new Date();
+        var elaborationTime = (tEnd-tRun) / 1000;
+        var message = 'Displaying ' + (vertices.length / 6) + ' points. Parsed in ' + elaborationTime + ' seconds.';
         console.log( message );
         document.getElementById( 'vertices' ).textContent = message;
         
