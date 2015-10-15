@@ -8,6 +8,22 @@
 
   <!-- Latest compiled and minified CSS -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+  <style>
+    div#theMap {
+    width: 800px;
+    height: 600px;
+    position: relative;
+    }
+    #theCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    opacity: 0.5;
+    pointer-events: none;
+    }
+  </style>
   
   <script type="text/javascript" src="node_modules/openlayers/dist/ol-debug.js" ></script>
   <script type="text/javascript" src="node_modules/pixi.js/bin/pixi.js" ></script>
@@ -34,6 +50,8 @@
 	/* dynamic center */
 	uniform vec2 u_centerPoint;
 	uniform float u_zoom;
+
+	// the actual zoom of original data
 	uniform float u_coordsScale;
 
 	uniform int u_marker;
@@ -43,17 +61,16 @@
 	float greenComponent;
 
 	// it's working only with u_zoom = 5.0
-	float zoomFactor = pow( 10.0, u_zoom );
-
-	// not sure how to use this one
-	float coordsScale = pow( 10.0, u_coordsScale - u_zoom );
+	float zoomFactor = pow( 10.0, 5.0 /*u_zoom*/ );
 
         void main()
         {
-            gl_Position = vec4( ( vPosition.x  - ( u_centerPoint.x / u_zoom ) ),
-                                ( vPosition.y  - ( u_centerPoint.y / u_zoom ) ), 
+	    float vPosW = pow( 10.0, ( u_coordsScale - u_zoom ) );
+
+            gl_Position = vec4( ( vPosition.x  - ( u_centerPoint.x / zoomFactor ) ),
+                                ( vPosition.y  - ( u_centerPoint.y / zoomFactor ) ), 
 	                        vPosition.z,
-	                        vPosition.w
+	                        vPosW
 	                      );
 
 	    gl_PointSize = 1.0;
@@ -102,8 +119,9 @@
   <h3 id="vertices"></h3>
 </header>
     <section>
-      <canvas id="theCanvas" width="800" height="600" ></canvas>
-      <div id="theMap"></div>
+      <div id="theMap">
+	<canvas id="theCanvas" width="800" height="600" ></canvas>
+      </div>
     </section>
   </article>
 </body>

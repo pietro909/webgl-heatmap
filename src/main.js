@@ -117,6 +117,8 @@ function normalizeCoords( x, y )
     var newX = x; // (x / 8) - 1.5;
     var newY = y; // (y / 6) - 7;
 
+//    console.log('point:  '+x+', '+y);
+
     return {
         x : newX,
         y:  newY
@@ -161,13 +163,13 @@ var onLoad = function()
         
     // associate out shader variables with our data buffer
     var bufferId = gl.createBuffer();
-    var vPosition = gl.getAttribLocation(program, 'vPosition');
-    var vColor = gl.getAttribLocation(program, 'vColor');
-    var vUplink = gl.getAttribLocation(program, 'vUplink');
+    var vPosition = gl.getAttribLocation( program, 'vPosition' );
+    var vColor = gl.getAttribLocation( program, 'vColor' );
+    var vUplink = gl.getAttribLocation( program, 'vUplink' );
     var u_UpLinkMax = gl.getUniformLocation( program, 'u_UpLinkMax' );
-    var vDownlink = gl.getAttribLocation(program, 'vDownlink');
+    var vDownlink = gl.getAttribLocation( program, 'vDownlink');
     var u_DownLinkMax = gl.getUniformLocation( program, 'u_DownLinkMax' );
-    var vPmkpi = gl.getAttribLocation(program, 'vPmkpi');
+    var vPmkpi = gl.getAttribLocation( program, 'vPmkpi');
     var u_PmKpiMax = gl.getUniformLocation( program, 'u_PmKpiMax' );
     var u_marker = gl.getUniformLocation( program, 'u_marker' );
     var u_centerPoint = gl.getUniformLocation( program, 'u_centerPoint' );
@@ -201,6 +203,8 @@ var onLoad = function()
                 pointArray.push( currentPoint.UPLINK );
                 pointArray.push( currentPoint.DOWNLINK );
                 pointArray.push( currentPoint.PM_KPI );
+// [14.725038528442383, 40.93919372558594, 1, 0, 0, 1, 717713, 285533, 0, 
+//  15.053869247436523, 41.02341842651367, 1, 0, 0, 1, 841152, 605903, 0, 
             }
             
         }
@@ -217,7 +221,7 @@ var onLoad = function()
 
         // configure webgl
         gl.viewport(0, 0, canvas.width, canvas.height);
-        gl.clearColor(0.94, 0.98, 0.98, 1.0);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
         
         // load data into the GPU
         gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
@@ -276,7 +280,7 @@ var onLoad = function()
                 var vertices = parseData( data );
                 //console.log( bounds[event.target.value].min + ' - ' + bounds[event.target.value].max );
                 drawData( vertices, parseInt( event.target.value, 10 ) );
-                
+              
             };
         }
     );
@@ -316,8 +320,23 @@ var onLoad = function()
       console.log(' center to '+center[0]+', '+center[1]+' at '+zoom );
 
       gl.uniform2fv( u_centerPoint, center );
-      gl.uniform1f( u_zoom, /*5.0*/ zoom );
+      gl.uniform1f( u_zoom, zoom );
 
+      var zzzoom = 5 - zoom;
+/*
+      var w,uzoom, v,x,y;
+      for (var i = 0; i < allVertices.length; i += pointSize)
+      {
+        uzoom = Math.pow( 10,5 );
+        x = allVertices[ i ] - ( center[0] / uzoom );
+        y = allVertices[ i + 1] - ( center[1] / uzoom );
+        w = Math.pow(10, -(5-zoom)); // (zoom === 5) ? 1 : 1 / ( 5.0 - zoom);
+        console.log( 'x: '+allVertices[i] + ' -> ' + x + ' -> ' + (x*w));
+        console.log( 'y: '+allVertices[i+1] + ' -> ' + y + ' -> ' + (y*w));
+        console.log( 'w: 1 -> ' + w);
+      } 
+*/
+//      console.log(allVertices);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays( gl.POINTS, 0, allVertices.length / pointSize );
 
