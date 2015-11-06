@@ -39,20 +39,18 @@ var onLoad = function()
     var u_viewMinY = gl.getUniformLocation( program, 'u_viewMinY' );
     var u_viewMaxY = gl.getUniformLocation( program, 'u_viewMaxY' );
 
-  function updateMapSize()
-  {
+    function updateMapSize()
+    {
         var bounds = map.getView().calculateExtent( map.getSize() );
         var extent = ol.proj.transformExtent(bounds, 'EPSG:3857', 'EPSG:4326');
         gl.uniform1f( u_viewMinX, extent[ 0 ] );
         gl.uniform1f( u_viewMinY, [ extent[ 1 ] ] );
         gl.uniform1f( u_viewMaxX, [ extent[ 2 ] ] );
         gl.uniform1f( u_viewMaxY, [ extent[ 3 ] ] );
-  }
+    }
 
     function drawData( vertices )
     {
-
-  
 
         // configure webgl
         gl.viewport(0, 0, canvas.width, canvas.height);
@@ -78,88 +76,80 @@ var onLoad = function()
         
     }
 
-  function translatePoint( point )
-  {
+    function translatePoint( point )
+    {
 
+        // from http://stackoverflow.com/questions/28166471/openlayer3-how-to-get-coordinates-of-viewport
+        var bounds = map.getView().calculateExtent(map.getSize())
+        var extent = ol.proj.transformExtent(bounds, 'EPSG:3857', 'EPSG:4326');
+        var canvasSize = map.getSize();
+        var mapWidth = ( extent[ 2 ] - extent[ 0 ] );
+        var mapHeight = ( extent[ 3 ] - extent[ 1 ] );
+        var webgl_x = ( (point[0] - extent[0]) / mapWidth * 2) - 1;
+        var webgl_y = ( (point[1] - extent[1]) / mapHeight * 2) - 1;
 
-//    var point = map.getPixelFromCoordinate( _point );
+        var result = [
+            webgl_x,
+            webgl_y,
+            0,
+            1
+        ];
+        return result;
 
-    // from http://stackoverflow.com/questions/28166471/openlayer3-how-to-get-coordinates-of-viewport
-    var bounds = map.getView().calculateExtent(map.getSize())
-    var extent = ol.proj.transformExtent(bounds, 'EPSG:3857', 'EPSG:4326');
-    console.log( extent );
-
-    //point[0] : extent[ 2 ] - extent[ 0 ] = x : 800
-
-    var canvasSize = map.getSize();
-    var mapWidth = ( extent[ 2 ] - extent[ 0 ] );
-    var mapHeight = ( extent[ 3 ] - extent[ 1 ] );
-
-    console.log( mapWidth + ' x ' + mapHeight );
-    console.log( point );
-/*
-    var resX =  ( ( point[0] - extent[ 0 ] ) * canvasSize[ 0 ] ) / mapWidth;
-    var resY =  ( ( point[1] - extent[ 1 ] ) * canvasSize[ 1 ] ) / mapHeight;
-
-    var webgl_x = ( resX / canvasSize[ 0 ] ) * 2 - 1;
-    var webgl_y = ( resY / canvasSize[ 1 ] ) * 2 - 1;
-*/
-    var webgl_x = ( (point[0] - extent[0]) / mapWidth * 2) - 1;
-    var webgl_y = ( (point[1] - extent[1]) / mapHeight * 2) - 1;
-
-    console.log(webgl_x+ ', ' + webgl_y);
-
-    var result = [
-      webgl_x,
-      webgl_y,
-      0,
-      1
-    ];
-    return result;
-
-  }
+    }
     
-  var maltaWebMercator = ol.proj.fromLonLat(malta);
+    var maltaWebMercator = ol.proj.fromLonLat(malta);
 
-  map = new OpenLayers.Map({
-      layers: [
-        new OpenLayers.layer.Tile({
-          source: new OpenLayers.source.OSM()
+    map = new OpenLayers.Map({
+        layers: [
+            new OpenLayers.layer.Tile({
+                source: new OpenLayers.source.OSM()
+            })
+        ],
+        target: 'theMap',
+        controls: OpenLayers.control.defaults({
+            attributionOptions: ({
+                collapsible: false
+            })
+        }),
+        view: new OpenLayers.View({
+            center: maltaWebMercator,
+            zoom: 16
+            
         })
-      ],
-      target: 'theMap',
-      controls: OpenLayers.control.defaults({
-        attributionOptions: ({
-          collapsible: false
-        })
-      }),
-      view: new OpenLayers.View({
-          center: maltaWebMercator,
-          zoom: 16
-          
-      })
     });
 
-  view = map.getView();
+    view = map.getView();
 
-  var inputTxt = document.getElementById('myCoords');
-  var button = document.getElementById('findBtn');
-  button.addEventListener(
-    'click',
-    function( evt )
-    {
-      updateMapSize();
+    map.on(
+        'moveend',
+        function( event )
+        {
+            updateMapSize();
+            drawData( new Float32Array( thePoint ) );
+        }
+    );
 
-      var c = inputTxt.value.split(',');
-      var point = [
-        parseFloat( c[0] ),
-        parseFloat( c[1] )
-      ];
-      var toDraw = point; //translatePoint( point );
-      console.log(point[0]+' => '+toDraw[0]);
-      drawData( new Float32Array( toDraw ) );
-      console.log(point[1]+' => '+toDraw[1]);
-    }
-  );
+    var thePoint = [ 0.0, 0.0 ];
+    var inputTxt = document.getElementById('myCoords');
+    var button = document.getElementById('findBtn');
+    button.addEventListener(
+        'click',
+        function( evt )
+        {
+            updateMapSize();
+
+            var c = inputTxt.value.split(',');
+            var point = [
+                parseFloat( c[0] ),
+                parseFloat( c[1] )
+            ];
+            var toDraw = point; //translatePoint( point );
+            console.log(point[0]+' => '+toDraw[0]);
+            drawData( new Float32Array( toDraw ) );
+            console.log(point[1]+' => '+toDraw[1]);
+            thePoint = point;
+        }
+    );
     
 }
