@@ -124,7 +124,8 @@ var onLoad = function()
     var canvas, renderer, stage, container, gl, program,
         bufferId, vPosition, vColor,
         u_viewMinX, u_viewMaxX, u_viewMinY, u_viewMaxY,
-        vUplink, u_UpLinkMax, vDownlink, u_DownLinkMax, vPmkpi, u_PmKpiMax, u_marker,
+        vUplink, u_UpLinkMax, vDownlink, u_DownLinkMax, vPmkpi, u_PmKpiMax,
+        u_marker, u_coord_multiplier,
         points = [],
         allVertices = [],
         OpenLayers = ol,
@@ -133,7 +134,8 @@ var onLoad = function()
         pointSize = 9,
         center = ol.proj.fromLonLat( [ 12.457933, 41.902192 ] ),
         changeMarker = document.getElementById('changeMarker'),
-        canvas = document.getElementById( 'theCanvas' );
+        canvas = document.getElementById( 'theCanvas' ),
+        COORD_MULT = 1.0;
 
     // init context
     gl = WebGLUtils.setupWebGL( canvas );
@@ -172,8 +174,9 @@ var onLoad = function()
     u_PmKpiMax = gl.getUniformLocation( program, 'u_PmKpiMax' );
     
     u_marker = gl.getUniformLocation( program, 'u_marker' );
+    u_coord_multiplier = gl.getUniformLocation( program, 'u_coord_multiplier' );
     
-    function parseData( data )
+    function parseData( data, extents )
     {
         var k, currentPoint,p,  pointArray=[];
 
@@ -183,13 +186,12 @@ var onLoad = function()
         {
             k = i * 2;
             currentPoint = data[ i ];
-//            p = normalizeCoords( currentPoint.LON, currentPoint.LAT );
             
             if ( p !== null )
             {
                 // two bytes position
-                pointArray.push( currentPoint.LON /*p.x*/ );
-                pointArray.push( currentPoint.LAT /*p.y*/ );
+                pointArray.push( currentPoint.LON * COORD_MULT );
+                pointArray.push( currentPoint.LAT * COORD_MULT );
                 // four bytes baser color
                 pointArray.push( 1.0 );
                 pointArray.push( 0.0 );
@@ -204,7 +206,14 @@ var onLoad = function()
         }
         return( new Float32Array( pointArray ) );
     }
-    
+
+    function coordsToCanvas( point, extents )
+    {
+        var x = ( ( point[0] - extents[0] ) / ( extents[2] - extents[0] ) * 2.0 ) - 1.0;
+        var y = ( ( point[1] - extents[1] ) / ( extents[3] - extents[1] ) * 2.0 ) - 1.0;
+        return [ x, y ];
+    }
+  
     function drawData( vertices, marker )
     {
         var stride, step;
@@ -245,6 +254,7 @@ var onLoad = function()
         gl.uniform1fv( u_PmKpiMax, [ bounds.PMKPI.max ] );
 
         gl.uniform1i( u_marker, [ marker ] );
+        gl.uniform1f( u_coord_multiplier, [ COORD_MULT ] );
       
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays( gl.POINTS, 0, vertices.length / pointSize );
@@ -264,10 +274,12 @@ var onLoad = function()
         bounds = map.getView().calculateExtent( map.getSize() );
         extent = ol.proj.transformExtent(bounds, 'EPSG:3857', 'EPSG:4326' );
         
-        gl.uniform1f( u_viewMinX, extent[ 0 ] );
-        gl.uniform1f( u_viewMinY, [ extent[ 1 ] ] );
-        gl.uniform1f( u_viewMaxX, [ extent[ 2 ] ] );
-        gl.uniform1f( u_viewMaxY, [ extent[ 3 ] ] );
+        gl.uniform1f( u_viewMinX, [ extent[ 0 ] * COORD_MULT ] );
+        gl.uniform1f( u_viewMinY, [ extent[ 1 ] * COORD_MULT ] );
+        gl.uniform1f( u_viewMaxX, [ extent[ 2 ] * COORD_MULT ] );
+        gl.uniform1f( u_viewMaxY, [ extent[ 3 ] * COORD_MULT ] );
+
+        return extent;
     }
   
     // load and process file
@@ -279,9 +291,9 @@ var onLoad = function()
         },
         function( data )
         {
-            var vertices = parseData( data );
+            var extents = updateMapSize();
+            var vertices = parseData( data, extents );
 
-            updateMapSize();
             drawData( vertices, 1 );
             
             changeMarker.onchange = function( event )
@@ -319,9 +331,21 @@ var onLoad = function()
         'moveend',
         function( event )
         {
+
+            var extents = updateMapSize();
+            //var vertices = parseData( data, extents );
+
+            //drawData( vertices, 1 );
+            
             updateMapSize();
             //drawData( new Float32Array( thePoint ) );
-
+/*
+            var aV = [];
+            for ( var i = 0; i < allVertices.length / pointSize, i += pointSize )
+            {
+                aV.push( coordsToCanvas( allvertice ) );
+            }
+*/
             gl.clear(gl.COLOR_BUFFER_BIT);
             gl.drawArrays( gl.POINTS, 0, allVertices.length / pointSize );
         }

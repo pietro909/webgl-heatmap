@@ -20,6 +20,7 @@ uniform float u_DownLinkMax;
 uniform float u_PmKpiMax;
 
 uniform int u_marker;
+uniform float u_coord_multiplier;
 
 varying vec4 fColor;
 
@@ -39,12 +40,11 @@ vec4 coordsToCanvas( vec4 point )
 void main()
 {
     vec4 normalizedPoint = coordsToCanvas( vPosition );
-    gl_Position = vec4( normalizedPoint.x,
-			normalizedPoint.y,
+    gl_Position = vec4( normalizedPoint.x / u_coord_multiplier,
+			normalizedPoint.y / u_coord_multiplier,
 			vPosition.z,
-			vPosition.w
+			vPosition.w / u_coord_multiplier
 		      );
-    
     gl_PointSize = 4.0;
   
     if ( u_marker == 1 ) 
