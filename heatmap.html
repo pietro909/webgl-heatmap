@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <meta charset="utf-8"/>
+  <title>WebGL heatmap</title>
+
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+  <style>
+    div#theMap {
+    width: 800px;
+    height: 600px;
+    position: relative;
+    }
+    #theCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    opacity: 0.5;
+    pointer-events: none;
+    }
+  </style>
+  
+  <script type="text/javascript" src="node_modules/openlayers/dist/ol-debug.js" ></script>
+  <script type="text/javascript" src="node_modules/pixi.js/bin/pixi.js" ></script>
+  <script type="text/javascript" src="src/MV.js" ></script>
+  <script type="text/javascript" src="src/webgl-utils.js" ></script>
+  <script type="text/javascript" src="src/initShaders2.js" ></script>
+  <script type="text/javascript" src="src/heatmap.js" ></script>
+
+</head>
+
+<body onload="onLoad()" >
+  <article>
+<header>
+  <select id="changeMarker">
+    <option value=1 selected >UPLINK</option>
+    <option value=2 >DOWNLINK</option>
+    <option value=3 >PM-KPI</option>
+  </select>
+  <h3 id="vertices"></h3>
+</header>
+    <section>
+      <div id="theMap">
+	<canvas id="theCanvas" width="800" height="600" ></canvas>
+      </div>
+    </section>
+  </article>
+</body>
+
+</html>
