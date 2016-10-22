@@ -6,8 +6,6 @@
   <meta charset="utf-8"/>
   <title>WebGL heatmap</title>
 
-  <!-- Latest compiled and minified CSS -->
-
   <style>
     div#theMap {
     width: 800px;
@@ -28,82 +26,8 @@
   <script type="text/javascript" src="node_modules/pixi.js/bin/pixi.js" ></script>
   <script type="text/javascript" src="src/MV.js" ></script>
   <script type="text/javascript" src="src/webgl-utils.js" ></script>
-    <script type="text/javascript" src="src/initShaders2.js" ></script>
-
-  <script type="text/javascript" src="src/main.js" ></script>
-  
-    <script id="vertex-shader" type="x-shader/x-vertex">
-        attribute vec4 vPosition;
-        attribute vec4 vColor;
-
-        /* point attributes */
-        attribute float vUplink;
-        attribute float vDownlink;
-        attribute float vPmkpi;
-
-	/* const for the whole map */
-	uniform float u_UpLinkMax;
-	uniform float u_DownLinkMax;
-	uniform float u_PmKpiMax;
-
-	/* dynamic center */
-	uniform vec2 u_centerPoint;
-	uniform float u_zoom;
-
-	// the actual zoom of original data
-	uniform float u_coordsScale;
-
-	uniform int u_marker;
-
-        varying vec4 fColor;
-	
-	float greenComponent;
-
-	// it's working only with u_zoom = 5.0
-	float zoomFactor = pow( 10.0, 5.0 /*u_zoom*/ );
-
-        void main()
-        {
-	    float vPosW = pow( 10.0, ( u_coordsScale - u_zoom ) );
-
-            gl_Position = vec4( ( vPosition.x  - ( u_centerPoint.x / zoomFactor ) ),
-                                ( vPosition.y  - ( u_centerPoint.y / zoomFactor ) ), 
-	                        vPosition.z,
-	                        vPosW
-	                      );
-
-	    gl_PointSize = 1.0;
-
-	    if ( u_marker == 1 ) 
-	    {
-                greenComponent = vUplink / u_UpLinkMax;
-	    }
-	    else if ( u_marker == 2 )
-	    {
-	        greenComponent = vDownlink / u_DownLinkMax;
-	    }
-	    else
-	    {
-	        greenComponent = vPmkpi / u_PmKpiMax;
-	    }
-
-            fColor = vec4( vColor.x, 
-                           greenComponent, 
-                           vColor.z, 
-                           vColor.w 
-                          );
-        }
-    </script>
-
-    <script id="fragment-shader" type="x-shader/x-fragment">
-        precision mediump float;
-        varying vec4 fColor;
-
-        void main()
-        {
-            gl_FragColor = fColor; //vec4(1.0, 0.0, 0.0, 1.0);
-        }
-    </script>
+  <script type="text/javascript" src="src/initShaders2.js" ></script>
+  <script type="text/javascript" src="src/heatmap.js" ></script>
 
 </head>
 
