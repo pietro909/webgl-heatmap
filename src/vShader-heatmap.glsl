@@ -24,7 +24,10 @@ uniform float u_coord_multiplier;
 
 varying vec4 fColor;
 
+float redComponent;
 float greenComponent;
+float blueComponent;
+float pointSize;
 
 /**
  * translate 3D point in projected coordinates (see openlayers.org)
@@ -40,29 +43,41 @@ vec4 coordsToCanvas( vec4 point )
 void main()
 {
     vec4 normalizedPoint = coordsToCanvas( vPosition );
-    gl_Position = vec4( normalizedPoint.x / u_coord_multiplier,
-			normalizedPoint.y / u_coord_multiplier,
-			vPosition.z,
-			vPosition.w / u_coord_multiplier
-		      );
-    gl_PointSize = 4.0;
+    gl_Position = vec4(
+        normalizedPoint.x / u_coord_multiplier,
+	 	normalizedPoint.y / u_coord_multiplier,
+		vPosition.z,
+		vPosition.w / u_coord_multiplier
+	);
   
     if ( u_marker == 1 ) 
     {
-      greenComponent = vUplink / u_UpLinkMax;
+      redComponent = 0.4;
+      greenComponent = 0.2;
+      blueComponent = vUplink / u_UpLinkMax;
+      pointSize = 2.0 * (vUplink / u_UpLinkMax);
     }
     else if ( u_marker == 2 )
     {
+      redComponent = 0.9;
       greenComponent = vDownlink / u_DownLinkMax;
+      blueComponent = 0.0;
+      pointSize = 2.0 * (vDownlink / u_DownLinkMax);
     }
     else
     {
-      greenComponent = vPmkpi / u_PmKpiMax;
+      redComponent = vPmkpi / u_PmKpiMax;
+      greenComponent = 0.2;
+      blueComponent = 1.0;
+      pointSize = 2.0;
     }
+
+    gl_PointSize = pointSize;
   
-    fColor = vec4( vColor.x, 
+    fColor = vec4( 
+           redComponent, 
 		   greenComponent, 
-		   vColor.z, 
+           blueComponent,
 		   vColor.w 
 		 );
 }

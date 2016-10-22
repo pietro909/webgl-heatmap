@@ -118,10 +118,12 @@ function normalizeCoords( x, y )
     var newY = y; // (y / 6) - 7;
 
 //    console.log('point:  '+x+', '+y);
+// ol.proj.transform(evt.coordinate, 'EPSG:3857', 'EPSG:4326');
+    transformed = ol.proj.transform([x, y], "EPSG:4326", "EPSG:3857");
 
     return {
-        x : newX,
-        y:  newY
+        x : x, //transformed[0],
+        y:  y //transformed[1]
     }
     
 }
@@ -138,7 +140,7 @@ var onLoad = function()
         canvas, renderer, stage, container, gl, points = [], allVertices = [],
     OpenLayers = ol,
 //      url = '/assets/data/fake-data-1-rop-trunc.csv';
-      url = '/assets/data/fake-data-1-rop.csv';
+      url = '/assets/data/random-numbers.csv';
   var pointSize = 9;
 
     var changeMarker = document.getElementById('changeMarker');
@@ -284,15 +286,15 @@ var onLoad = function()
             };
         }
     );
-    
 
-  
+  var layer = new OpenLayers.layer.Tile({
+    source: new OpenLayers.source.OSM()
+  });
+
+  // default projection is "EPSG:3857"
+    
   map = new OpenLayers.Map({
-    layers: [
-      new OpenLayers.layer.Tile({
-        source: new OpenLayers.source.OSM()
-      })
-    ],
+    layers: [ layer ],
     target: 'theMap',
     controls: OpenLayers.control.defaults({
       attributionOptions: ({
@@ -300,16 +302,13 @@ var onLoad = function()
       })
     }),
     view: new OpenLayers.View({
-      center: [0, 0],
-      zoom: 1
+      center: [1448023.063834379, 4549531.923533691],
+      zoom: 4
     })
   });
 
   var view = map.getView();
-/*
-  var position = OpenLayers.Coordinate([40.93919444444444, 14.72503888888889]);
-  map.setCenter( position );
-*/
+
   map.addEventListener(
     'moveend',
     function( event )
@@ -322,21 +321,6 @@ var onLoad = function()
       gl.uniform2fv( u_centerPoint, center );
       gl.uniform1f( u_zoom, zoom );
 
-      var zzzoom = 5 - zoom;
-/*
-      var w,uzoom, v,x,y;
-      for (var i = 0; i < allVertices.length; i += pointSize)
-      {
-        uzoom = Math.pow( 10,5 );
-        x = allVertices[ i ] - ( center[0] / uzoom );
-        y = allVertices[ i + 1] - ( center[1] / uzoom );
-        w = Math.pow(10, -(5-zoom)); // (zoom === 5) ? 1 : 1 / ( 5.0 - zoom);
-        console.log( 'x: '+allVertices[i] + ' -> ' + x + ' -> ' + (x*w));
-        console.log( 'y: '+allVertices[i+1] + ' -> ' + y + ' -> ' + (y*w));
-        console.log( 'w: 1 -> ' + w);
-      } 
-*/
-//      console.log(allVertices);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays( gl.POINTS, 0, allVertices.length / pointSize );
 
