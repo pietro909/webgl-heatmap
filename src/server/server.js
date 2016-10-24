@@ -21,36 +21,10 @@ app.use(morgan('dev'));
 app.get('/data', (req, res) => {
     const result = coords.map(latLon => {
         const [u, d, l] = [1,2,3].map(n => Math.random());
-            return {
-                lat: latLon[0],
-                lon: latLon[1],
-                uptime: u,
-                downtime: d,
-                link: l
-            };
+        // sending as string is roughly 67% of the json payload
+        return `${latLon[0]},${latLon[1]},${u},${d},${l}`
     });
     res.send(result);
-/*
-    fs.readFile(__dirname+'/../../assets/data.csv', 'utf8', function (err,data) {
-        if (err) {
-            return console.log(err);
-        }
-        const rows = data.split('\n');
-        const result = rows.map(row => {
-            const [lat, lon] = row.split(' ');
-            const [u, d, l] = [1,2,3].map(n => Math.random());
-            return {
-                lat: lat,
-                lon: lon,
-                uptime: u,
-                downtime: d,
-                link: l
-            }
-        });
-        res.send(result);
-        console.log(data);
-    });
-*/
 });
 
 app.listen(app.get('port'), () => {

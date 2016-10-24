@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8"/>
   <title>WebGL heatmap</title>
-  <link rel="stylesheet" type="text/css" src="node_modules/bootstrap/dist/css/bootstrap.min.css" >
+  <link rel="stylesheet" type="text/css" href="node_modules/bootstrap/dist/css/bootstrap.min.css" >
   <style>
     div#theMap {
     width: 800px;
@@ -30,22 +30,25 @@
 
 </head>
 
-<body onload="onLoad()" >
-  <article>
-<header>
-  <select id="changeMarker">
-    <option value=1 selected >UPLINK</option>
-    <option value=2 >DOWNLINK</option>
-    <option value=3 >PM-KPI</option>
-  </select>
-  <h3 id="vertices"></h3>
-</header>
-    <section>
-      <div id="theMap">
-	<canvas id="theCanvas" width="800" height="600" ></canvas>
-      </div>
-    </section>
-  </article>
+<body onload="onLoad()" class="container">
+    <header>
+        <h1>Canvas heatmap experiment</h1>
+    </header>
+    <article class="row">
+        <aside class="col-sm-3">
+            <h3>WebGL stats</h3> 
+            <p>Drawn <span id="points">0</span> points in <span id="drawTime">0</span> seconds</p>
+            <h3>HTTP stats</h3> 
+            <p><span id="loadPercent">0%</span> loaded</p>
+            <p><span id="fileSize">0</span>Mb fetched in <span id="fileTime"></span> seconds.</p>
+            <p>Polling every 4 seconds</p>
+        </aside>
+        <section class="col-sm-9">
+            <div id="theMap">
+                <canvas id="theCanvas" width="800" height="600" ></canvas>
+            </div>
+        </section>
+    </article>
 </body>
 
 </html>

@@ -1,30 +1,39 @@
 function loadData(url, onProgress, onLoaded) {
     'use strict';
 
-    var myRequest;
+    var myRequest, tStart = new Date(),
+        uiFileTime = document.getElementById('fileTime'),
+        uiFileSize = document.getElementById('fileSize');
+
 
     myRequest = new XMLHttpRequest();
 
     myRequest.addEventListener(
         'loadend',
         function(event) {
-            var response = event.target.response;
-            try {
-                var theDocument = JSON.parse(response);
-                onLoaded(theDocument);
-            } catch(e) {
-                console.log(e);
-                console.log(response);
-            }
+            var json = JSON.parse(event.target.response);
+            var response = json.map(function(s) {
+                var p = s.split(',');
+                return {
+                    lat: p[0],
+                    lon: p[1],
+                    uptime: parseFloat(p[2]),
+                    downtime: parseFloat(p[3]),
+                    link: parseFloat(p[4])
+                };
+            });
+            onLoaded(response);
+            var size = Math.floor((event.loaded/1000000)*10)/10;
+            uiFileSize.textContent = size;
+            uiFileTime.textContent = ((new Date()) - tStart) / 1000;
         }
     );
 
     myRequest.addEventListener(
         'progress',
         function(event) {
-            //console.log(event);
-            // var percentage = Math.floor(event.loaded * 100 / event.total);
-            // onProgress(percentage);
+            var percentage = Math.floor(event.loaded * 100 / event.total);
+            onProgress(percentage);
         }
     );
 
@@ -34,7 +43,6 @@ function loadData(url, onProgress, onLoaded) {
 }
 
 
-var tRun, tEnd, tStart = new Date();
 
 var map, view;
 
@@ -42,17 +50,22 @@ var onLoad = function() {
     'use strict';
 
     var canvas, renderer, stage, container, gl, program,
-        bufferId, vPosition, /*vColor,*/
+        bufferId, vPosition,
         u_viewMinX, u_viewMaxX, u_viewMinY, u_viewMaxY,
         vUplink, vDownlink, vPmkpi,
+        tRun, tEnd,
         points = [],
         allVertices = [],
         OpenLayers = ol,
         url = '/data',
-        pointSize = 5, //9,
+        pointSize = 5,
         center = ol.proj.fromLonLat([12.457933, 41.902192]),
         changeMarker = document.getElementById('changeMarker'),
         canvas = document.getElementById('theCanvas');
+
+    var uiPoints = document.getElementById('points'),
+        uiDrawTime = document.getElementById('drawTime'),
+        uiLoadingPercent = document.getElementById('loadPercent');
 
     // init context
     gl = WebGLUtils.setupWebGL(canvas);
@@ -135,9 +148,6 @@ var onLoad = function() {
         gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, stride, 0);
         gl.enableVertexAttribArray(vPosition);
 
-        //gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, stride, 2 * step);
-        //gl.enableVertexAttribArray(vColor);
-
         gl.vertexAttribPointer(vUplink, 1, gl.FLOAT, false, stride, 2 *
             step);
         gl.enableVertexAttribArray(vUplink);
@@ -153,11 +163,9 @@ var onLoad = function() {
         gl.drawArrays(gl.POINTS, 0, vertices.length / pointSize);
 
         tEnd = new Date();
-        var elaborationTime = (tEnd - tRun) / 1000;
-        var message = 'Displaying ' + (vertices.length / pointSize) +
-            ' points. Parsed in ' + elaborationTime + ' seconds.';
-        console.log(message);
-        document.getElementById('vertices').textContent = message;
+
+        uiPoints.textContent = vertices.length / pointSize;
+        uiDrawTime.textContent = (tEnd - tRun) / 1000;
 
     }
 
@@ -175,23 +183,26 @@ var onLoad = function() {
         return extent;
     }
 
-    // load and process file
-    setInterval(function() {
-    loadData(
-        url,
-        function(percentage) {
-            console.log('loaded: ' + percentage + '%');
-        },
-        function(data) {
-            var extents = updateMapSize();
-            var vertices = parseData(data, extents);
+    function fetch() {
+        loadData(
+            url,
+            function(percentage) {
+                uiLoadingPercent.textContent = percentage + '%';
+                uiLoadingPercent.parentNode.className = "text-danger";
+            },
+            function(data) {
+                var extents = updateMapSize();
+                var vertices = parseData(data, extents);
+                drawData(vertices);
 
-            drawData(vertices);
+                uiLoadingPercent.parentNode.className = "";
+                setTimeout(fetch, 4000);
 
-        }
-    );
-    }, 4000);
+            }
+        );
+    }
 
+    fetch();
 
     map = new OpenLayers.Map({
         projection: 'EPSG:4326',
