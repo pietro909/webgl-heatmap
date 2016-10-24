@@ -10,11 +10,8 @@
   "license": "MIT",
   "dependencies": {
     "bootstrap": "^3.3.7",
-    "buffer-json-stream": "^0.1.6",
-    "csv-parse": "^1.1.7",
     "express": "^4.14.0",
     "morgan": "^1.7.0",
-    "openlayers": "3.10.1",
-    "stream-transform": "^0.1.1"
+    "openlayers": "3.10.1"
   }
 }
